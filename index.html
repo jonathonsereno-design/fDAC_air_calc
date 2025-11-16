@@ -149,11 +149,17 @@
   <div class="app">
     <h1>Air Sample fDAC Calculator</h1>
 
-    <div class="small">
-      Site formula:<br>
-      <em>fDAC = NetActivity(cpm) / Volume(mL) × 2.22×10⁶ × Eff × DAC_const</em><br>
-      β/γ Co-60 DACconst = 1.0×10⁻⁸, α Am-241 DACconst = 3.0×10⁻¹².
-    </div>
+    // fDAC calculation using physically consistent form:
+// conc (µCi/mL) = Net cpm / (eff * 2.22e6 * Volume(mL))
+// fDAC = conc / DAC
+var dacConst = (mode === "beta") ? DAC_CONST_BETA : DAC_CONST_ALPHA;
+
+// concentration in µCi/mL
+var conc_uCi_per_mL = netCpm / (eff * DPM_PER_UCI * volumeML);
+
+// fDAC = concentration / DAC (dacConst is in µCi/mL)
+var fDAC = conc_uCi_per_mL / dacConst;
+
 
     <div class="section-title">Mode</div>
     <div class="mode-row">
@@ -383,7 +389,11 @@
       html += "<strong>Sample Time:</strong> " + sampleMinutes + " min (" + sampleHours.toFixed(2) + " h)<br>";
       html += "<strong>Flow Rate:</strong> " + flowLpm.toFixed(2) + " L/min<br>";
       html += "<strong>Total Volume:</strong> " + formatSci(volumeML, 3) + " mL<br>";
-      html += "<strong>Total Volume:</strong> " + volumeM3.toFixed(4) + " m³<br><br>";
+html += "<strong>Total Volume:</strong> " + volumeM3.toFixed(4) + " m³<br>";
+html += "<strong>Concentration:</strong> " + formatSci(conc_uCi_per_mL, 3) + " µCi/mL<br><br>";
+
+     
+
 
       html += detailsCounts + "<br>";
       html += "<strong>Efficiency:</strong> " + eff.toFixed(3) + "<br><br>";
