@@ -150,9 +150,8 @@
     <h1>Air Sample fDAC Calculator</h1>
 
     <div class="small">
-      Chain used (physically consistent):<br>
-      Net cpm → DPM → µCi → µCi/mL → fDAC.<br>
-      DAC(β/γ Co-60) = 1.0×10⁻⁸ µCi/mL, DAC(α Am-241) = 3.0×10⁻¹² µCi/mL.
+      Chain used (physically consistent): Net cpm → DPM → µCi → µCi/mL → fDAC.<br>
+      β/γ Co-60 DAC = 1.0×10⁻⁸ µCi/mL, α Am-241 DAC = 3.0×10⁻¹² µCi/mL.
     </div>
 
     <div class="section-title">Mode</div>
@@ -170,13 +169,15 @@
     <div class="section-title">Sample Info</div>
     <label>
       Sample ON (HHMM)
-      <input type="text" id="timeOn" placeholder="e.g. 0830">
+      <input type="text" id="timeOn" placeholder="e.g. 2200">
     </label>
     <label>
       Sample OFF (HHMM)
-      <input type="text" id="timeOff" placeholder="e.g. 1545">
+      <input type="text" id="timeOff" placeholder="e.g. 0600">
     </label>
-    <div class="small">Same-day only, e.g. 0730, 1930.</div>
+    <div class="small">
+      Time examples: 0730, 1930, overnight allowed (e.g. 2200 → 0600 treated as next day).
+    </div>
 
     <div class="section-title">Flow</div>
     <label>
@@ -212,7 +213,7 @@
         Background α (cpm)
         <input type="number" id="bkgAlphaCpm" placeholder="e.g. 1.2">
       </label>
-      <div class="small">Gross α counts are for 10 minutes; app divides by 10 to get cpm.</div>
+      <div class="small">Gross α counts are for a 10-minute count; app divides by 10 to get cpm.</div>
     </div>
 
     <label>
@@ -229,11 +230,11 @@
     </div>
 
     <div class="note">
-      SampleTime(min) = OFF − ON<br>
-      Volume(mL) = Time(min) × Flow(L/min) × 1000<br>
-      β/γ net = gross − bkg (cpm)<br>
-      α net = (gross counts/10) − bkg cpm<br>
-      conc (µCi/mL) = Net cpm / (eff × 2.22×10⁶ × Volume(mL))<br>
+      SampleTime(min): OFF − ON, if OFF ≤ ON assumed next day (adds 24 h).<br>
+      Volume(mL) = Time(min) × Flow(L/min) × 1000.<br>
+      β/γ net = gross − bkg (cpm).<br>
+      α net = (gross counts/10) − bkg cpm.<br>
+      conc (µCi/mL) = Net cpm / (eff × 2.22×10⁶ × Volume(mL)).<br>
       fDAC = conc / DAC.
     </div>
   </div>
@@ -324,10 +325,18 @@
       }
 
       var sampleMinutes = offMin - onMin;
+
+      // Overnight logic: if OFF <= ON, assume next day
       if (sampleMinutes <= 0) {
-        errorDiv.textContent = "OFF time must be later than ON time (same day).";
+        sampleMinutes += 24 * 60; // add 1440 minutes
+      }
+
+      // sanity check: duration > 0 and <= 24 h
+      if (sampleMinutes <= 0 || sampleMinutes > 24 * 60) {
+        errorDiv.textContent = "Check ON/OFF times – duration looks invalid (>24 h or ≤0).";
         return;
       }
+
       var sampleHours = sampleMinutes / 60.0;
 
       // Flow & volume
@@ -385,5 +394,40 @@
       // fDAC = conc / DAC
       var dacConst = (mode === "beta") ? DAC_CONST_BETA : DAC_CONST_ALPHA;
 
-      var conc_uCi_per_mL = netCpm / (eff * DPM_PER_UCI * vo_
+      var conc_uCi_per_mL = netCpm / (eff * DPM_PER_UCI * volumeML);
+      var fDAC = conc_uCi_per_mL / dacConst;
 
+      var html = "";
+
+      html += "<strong>Mode:</strong> " + (mode === "beta" ? "Beta / Gamma (Co-60)" : "Alpha (Am-241)") + "<br><br>";
+      html += "<strong>Sample Time:</strong> " + sampleMinutes + " min (" + sampleHours.toFixed(2) + " h)<br>";
+      html += "<strong>Flow Rate:</strong> " + flowLpm.toFixed(2) + " L/min<br>";
+      html += "<strong>Total Volume:</strong> " + formatSci(volumeML, 3) + " mL<br>";
+      html += "<strong>Total Volume:</strong> " + volumeM3.toFixed(4) + " m³<br>";
+      html += "<strong>Concentration:</strong> " + formatSci(conc_uCi_per_mL, 3) + " µCi/mL<br><br>";
+
+      html += detailsCounts + "<br>";
+      html += "<strong>Efficiency:</strong> " + eff.toFixed(3) + "<br><br>";
+
+      html += "<strong>fDAC (decimal):</strong> " + fDAC.toFixed(6) + "<br>";
+      html += "<strong>fDAC (sci, 2 decimals):</strong> " + formatSci(fDAC, 2) + "<br>";
+
+      var alertClass = "ok";
+      var alertText = "OK (< 0.1 DAC)";
+      if (fDAC >= 1.0) {
+        alertClass = "high";
+        alertText = "ALARM: ≥ 1 DAC – follow site procedures.";
+      } else if (fDAC >= 0.1) {
+        alertClass = "elevated";
+        alertText = "Elevated: ≥ 0.1 DAC – review per procedures.";
+      }
+
+      html += '<span class="alert-text ' + alertClass + '">' + alertText + '</span>';
+      results.innerHTML = html;
+    }
+
+    // Initialize mode UI
+    updateModeUI();
+  </script>
+</body>
+</html>
