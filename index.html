@@ -4,13 +4,48 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Air Sample fDAC Calculator</title>
+  <meta name="theme-color" content="#004466" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
   <style>
-    body { font-family: Arial; padding: 20px; max-width: 700px; margin: auto; }
-    label { font-weight: bold; display: block; margin-top: 10px; }
-    input, select, button { width: 100%; padding: 8px; margin: 5px 0; }
-    .result { font-size: 1.2em; font-weight: bold; margin-top: 20px; }
-    .warning { color: red; font-weight: bold; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: auto;
+      max-width: 700px;
+      background: #f9f9f9;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      font-size: 1em;
+    }
+    .result {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+      input, select, button { font-size: 1em; padding: 8px; }
+    }
   </style>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('✅ Service worker registered:', reg))
+        .catch(err => console.error('❌ Service worker failed:', err));
+    }
+  </script>
 </head>
 <body>
   <h2>Air Sample fDAC Calculator</h2>
@@ -93,7 +128,6 @@
         return;
       }
 
-      // Volume
       const onMinutes = convertToMinutes(timeOn);
       const offMinutes = convertToMinutes(timeOff);
       const duration = (offMinutes < onMinutes) ? (1440 - onMinutes + offMinutes) : (offMinutes - onMinutes);
@@ -106,17 +140,14 @@
         alert(`⚠️ WARNING: Volume (${volume.toExponential(2)} mL) is below procedural minimum for ${mode.toUpperCase()}.\nRefer to procedure for extended count time or re-sampling.`);
       }
 
-      // Net CPM
       let netCPM = gross - background;
       resultNetCPM.textContent = `Net Activity: ${netCPM.toFixed(2)} CPM`;
 
-      // Alpha check
       if (mode === "alpha" && !alphaDivided) {
         const proceed = confirm("❗Reminder: Gross counts must be divided by 10 for alpha (10 min count).\nProceed anyway?");
         if (!proceed) return;
       }
 
-      // DAC Formula
       const DACValue = mode === "beta" ? 1e-8 : 3e-12;
       const filterFactor = mode === "alpha" ? 0.7 : 1;
       const dacFraction = netCPM / (volume * filterFactor * DPM_PER_UCI * efficiency * DACValue);
