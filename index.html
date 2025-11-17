@@ -1,433 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Air Sample fDAC Calculator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      margin: 0;
-      padding: 12px;
-      box-sizing: border-box;
-      background: #f5f5f5;
-    }
-
-    .app {
-      max-width: 520px;
-      margin: 0 auto;
-      background: #ffffff;
-      padding: 16px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    h1 {
-      font-size: 1.3rem;
-      margin-top: 0;
-      text-align: center;
-    }
-
-    .section-title {
-      font-weight: 600;
-      margin-top: 16px;
-      margin-bottom: 4px;
-      font-size: 0.95rem;
-    }
-
-    label {
-      display: block;
-      margin-top: 8px;
-      font-size: 0.85rem;
-    }
-
-    input, button {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      font-size: 0.9rem;
-      box-sizing: border-box;
-    }
-
-    input {
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      background: #fafafa;
-    }
-
-    button {
-      margin-top: 14px;
-      border-radius: 4px;
-      border: none;
-      background: #1976d2;
-      color: white;
-      font-weight: 600;
-    }
-
-    button:active {
-      transform: scale(0.99);
-    }
-
-    .row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .row > div {
-      flex: 1;
-    }
-
-    .output {
-      margin-top: 16px;
-      padding: 10px;
-      border-radius: 6px;
-      background: #f0f4ff;
-      font-size: 0.9rem;
-      border: 1px solid #c5cae9;
-    }
-
-    .alert-text {
-      display: block;
-      margin-top: 8px;
-      font-weight: 700;
-    }
-
-    .ok {
-      color: #2e7d32;
-    }
-
-    .elevated {
-      color: #f57c00;
-    }
-
-    .high {
-      color: #c62828;
-    }
-
-    .note {
-      margin-top: 12px;
-      font-size: 0.75rem;
-      color: #555;
-    }
-
-    .small {
-      font-size: 0.75rem;
-      color: #444;
-    }
-
-    .error {
-      color: #c62828;
-      font-weight: 600;
-      margin-top: 6px;
-    }
-
-    .mode-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 6px;
-      font-size: 0.85rem;
-    }
-
-    .mode-row label {
-      margin-top: 0;
-      flex: 1;
-      text-align: center;
-      background: #e3f2fd;
-      padding: 4px 0;
-      border-radius: 4px;
-      border: 1px solid #90caf9;
-    }
-
-    .mode-row input {
-      width: auto;
-      margin-right: 4px;
-    }
+    body { font-family: Arial; padding: 20px; max-width: 700px; margin: auto; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    input, select, button { width: 100%; padding: 8px; margin: 5px 0; }
+    .result { font-size: 1.2em; font-weight: bold; margin-top: 20px; }
+    .warning { color: red; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="app">
-    <h1>Air Sample fDAC Calculator</h1>
+  <h2>Air Sample fDAC Calculator</h2>
 
-    <div class="small">
-      Chain used (physically consistent): Net cpm → DPM → µCi → µCi/mL → fDAC.<br>
-      β/γ Co-60 DAC = 1.0×10⁻⁸ µCi/mL, α Am-241 DAC = 3.0×10⁻¹² µCi/mL.
-    </div>
+  <label for="calculationMode">Calculation Mode</label>
+  <select id="calculationMode">
+    <option value="beta">Beta/Gamma</option>
+    <option value="alpha">Alpha</option>
+  </select>
 
-    <div class="section-title">Mode</div>
-    <div class="mode-row">
-      <label>
-        <input type="radio" name="mode" value="beta" checked>
-        Beta / Gamma (Co-60)
-      </label>
-      <label>
-        <input type="radio" name="mode" value="alpha">
-        Alpha (Am-241)
-      </label>
-    </div>
+  <label for="timeOn">Time On (HHMM)</label>
+  <input type="text" id="timeOn" placeholder="e.g., 1730" />
 
-    <div class="section-title">Sample Info</div>
-    <label>
-      Sample ON (HHMM)
-      <input type="text" id="timeOn" placeholder="e.g. 2200">
-    </label>
-    <label>
-      Sample OFF (HHMM)
-      <input type="text" id="timeOff" placeholder="e.g. 0600">
-    </label>
-    <div class="small">
-      Time examples: 0730, 1930, overnight allowed (e.g. 2200 → 0600 treated as next day).
-    </div>
+  <label for="timeOff">Time Off (HHMM)</label>
+  <input type="text" id="timeOff" placeholder="e.g., 1130" />
 
-    <div class="section-title">Flow</div>
-    <label>
-      Flow Rate (L/min)
-      <input type="number" id="flowLpm" step="0.1" placeholder="e.g. 30">
-    </label>
+  <label for="flowRate">Flow Rate</label>
+  <input type="number" id="flowRate" placeholder="e.g., 30" />
 
-    <div class="section-title">Count Data</div>
+  <label for="flowUnit">Flow Rate Unit</label>
+  <select id="flowUnit">
+    <option value="LPM">LPM</option>
+    <option value="CFM">ft³/min</option>
+  </select>
 
-    <div id="betaBlock">
-      <div class="row">
-        <div>
-          <label>
-            Gross β/γ (cpm)
-            <input type="number" id="grossBeta" placeholder="e.g. 391">
-          </label>
-        </div>
-        <div>
-          <label>
-            Background β/γ (cpm)
-            <input type="number" id="bkgBeta" placeholder="e.g. 29">
-          </label>
-        </div>
-      </div>
-    </div>
+  <label for="grossCPM">Gross Activity (CPM)</label>
+  <input type="number" id="grossCPM" placeholder="e.g., 150" />
 
-    <div id="alphaBlock" style="display:none;">
-      <label>
-        Gross α counts (10 min)
-        <input type="number" id="grossAlpha10" placeholder="e.g. 250">
-      </label>
-      <label>
-        Background α (cpm)
-        <input type="number" id="bkgAlphaCpm" placeholder="e.g. 1.2">
-      </label>
-      <div class="small">Gross α counts are for a 10-minute count; app divides by 10 to get cpm.</div>
-    </div>
+  <label for="backgroundCPM">Background Activity (CPM)</label>
+  <input type="number" id="backgroundCPM" placeholder="e.g., 20" />
 
-    <label>
-      Detector Efficiency (decimal)
-      <input type="number" id="eff" step="0.01" value="0.17" placeholder="e.g. 0.17">
-    </label>
+  <label for="efficiency">Detector Efficiency (decimal)</label>
+  <input type="number" id="efficiency" step="0.01" placeholder="e.g., 0.19" />
 
-    <button type="button" onclick="calculate()">Calculate fDAC</button>
-
-    <div id="error" class="error"></div>
-
-    <div class="output" id="results">
-      Enter values and tap <strong>Calculate fDAC</strong>.
-    </div>
-
-    <div class="note">
-      SampleTime(min): OFF − ON, if OFF ≤ ON assumed next day (adds 24 h).<br>
-      Volume(mL) = Time(min) × Flow(L/min) × 1000.<br>
-      β/γ net = gross − bkg (cpm).<br>
-      α net = (gross counts/10) − bkg cpm.<br>
-      conc (µCi/mL) = Net cpm / (eff × 2.22×10⁶ × Volume(mL)).<br>
-      fDAC = conc / DAC.
-    </div>
+  <div id="alphaCheckDiv" style="display: none;">
+    <input type="checkbox" id="alphaDivided" />
+    <label for="alphaDivided">I have divided gross counts by 10 (10-minute alpha count)</label>
   </div>
 
+  <button onclick="calculateDAC()">Calculate fDAC</button>
+
+  <div class="result" id="resultVolume"></div>
+  <div class="result" id="resultNetCPM"></div>
+  <div class="result" id="resultDAC"></div>
+
   <script>
-    // Constants
-    var DPM_PER_UCI = 2.22e6;        // dpm per µCi
-    var DAC_CONST_BETA = 1.0e-8;     // Co-60 µCi/mL
-    var DAC_CONST_ALPHA = 3.0e-12;   // Am-241 µCi/mL
+    const DPM_PER_UCI = 2.22e6;
 
-    var modeRadios = document.getElementsByName('mode');
-    var betaBlock = document.getElementById('betaBlock');
-    var alphaBlock = document.getElementById('alphaBlock');
+    document.getElementById("calculationMode").addEventListener("change", function () {
+      const mode = this.value;
+      document.getElementById("alphaCheckDiv").style.display = (mode === "alpha") ? "block" : "none";
+    });
 
-    function getMode() {
-      var mode = "beta";
-      for (var i = 0; i < modeRadios.length; i++) {
-        if (modeRadios[i].checked) {
-          mode = modeRadios[i].value;
-          break;
-        }
-      }
-      return mode;
+    function convertToMinutes(timeStr) {
+      const hours = parseInt(timeStr.slice(0, 2), 10);
+      const minutes = parseInt(timeStr.slice(2), 10);
+      return hours * 60 + minutes;
     }
 
-    function updateModeUI() {
-      var mode = getMode();
-      if (mode === "beta") {
-        betaBlock.style.display = 'block';
-        alphaBlock.style.display = 'none';
-      } else {
-        betaBlock.style.display = 'none';
-        alphaBlock.style.display = 'block';
-      }
-    }
+    function calculateDAC() {
+      const mode = document.getElementById("calculationMode").value;
+      const timeOn = document.getElementById("timeOn").value;
+      const timeOff = document.getElementById("timeOff").value;
+      const flowRate = parseFloat(document.getElementById("flowRate").value);
+      const flowUnit = document.getElementById("flowUnit").value;
+      const gross = parseFloat(document.getElementById("grossCPM").value);
+      const background = parseFloat(document.getElementById("backgroundCPM").value);
+      const efficiency = parseFloat(document.getElementById("efficiency").value);
+      const alphaDivided = document.getElementById("alphaDivided").checked;
 
-    for (var i = 0; i < modeRadios.length; i++) {
-      modeRadios[i].addEventListener('change', updateModeUI);
-    }
+      const resultVolume = document.getElementById("resultVolume");
+      const resultNetCPM = document.getElementById("resultNetCPM");
+      const resultDAC = document.getElementById("resultDAC");
 
-    // Convert "HHMM" or "HMM" or "HH:MM" to minutes from midnight
-    function timeToMinutes(timeStr) {
-      if (!timeStr) return NaN;
-      timeStr = timeStr.toString().trim().replace(":", "");
-      if (timeStr.length < 3 || timeStr.length > 4) return NaN;
-
-      var h, m;
-      if (timeStr.length === 3) {
-        h = parseInt(timeStr.charAt(0), 10);
-        m = parseInt(timeStr.slice(1), 10);
-      } else {
-        h = parseInt(timeStr.slice(0, 2), 10);
-        m = parseInt(timeStr.slice(2, 4), 10);
-      }
-
-      if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) return NaN;
-      return h * 60 + m;
-    }
-
-    // Format in scientific notation with specified decimals after decimal point
-    function formatSci(value, decimals) {
-      if (!isFinite(value) || value === 0) return "0";
-      var expStr = value.toExponential(decimals);
-      var parts = expStr.split("e");
-      var coeff = parts[0];
-      var power = parseInt(parts[1], 10);
-      return coeff + " × 10^" + power;
-    }
-
-    function calculate() {
-      var errorDiv = document.getElementById('error');
-      var results = document.getElementById('results');
-      errorDiv.textContent = "";
-      results.innerHTML = "";
-
-      var mode = getMode();
-
-      // Time
-      var timeOnStr = document.getElementById('timeOn').value;
-      var timeOffStr = document.getElementById('timeOff').value;
-
-      var onMin = timeToMinutes(timeOnStr);
-      var offMin = timeToMinutes(timeOffStr);
-
-      if (isNaN(onMin) || isNaN(offMin)) {
-        errorDiv.textContent = "Enter valid ON and OFF times in HHMM format.";
+      if (
+        isNaN(flowRate) || isNaN(gross) || isNaN(background) || isNaN(efficiency) ||
+        !/^\d{4}$/.test(timeOn) || !/^\d{4}$/.test(timeOff)
+      ) {
+        alert("Please fill in all fields correctly.");
         return;
       }
 
-      var sampleMinutes = offMin - onMin;
+      // Volume
+      const onMinutes = convertToMinutes(timeOn);
+      const offMinutes = convertToMinutes(timeOff);
+      const duration = (offMinutes < onMinutes) ? (1440 - onMinutes + offMinutes) : (offMinutes - onMinutes);
+      const flowML = flowUnit === "LPM" ? flowRate * 1000 : flowRate * 28300;
+      const volume = duration * flowML;
+      resultVolume.textContent = `Total Volume Collected: ${volume.toExponential(4)} mL`;
 
-      // Overnight logic: if OFF <= ON, assume next day
-      if (sampleMinutes <= 0) {
-        sampleMinutes += 24 * 60; // add 1440 minutes
+      const minVolume = mode === "beta" ? 1.5e5 : 3.0e6;
+      if (volume < minVolume) {
+        alert(`⚠️ WARNING: Volume (${volume.toExponential(2)} mL) is below procedural minimum for ${mode.toUpperCase()}.\nRefer to procedure for extended count time or re-sampling.`);
       }
 
-      // sanity check: duration > 0 and <= 24 h
-      if (sampleMinutes <= 0 || sampleMinutes > 24 * 60) {
-        errorDiv.textContent = "Check ON/OFF times – duration looks invalid (>24 h or ≤0).";
-        return;
+      // Net CPM
+      let netCPM = gross - background;
+      resultNetCPM.textContent = `Net Activity: ${netCPM.toFixed(2)} CPM`;
+
+      // Alpha check
+      if (mode === "alpha" && !alphaDivided) {
+        const proceed = confirm("❗Reminder: Gross counts must be divided by 10 for alpha (10 min count).\nProceed anyway?");
+        if (!proceed) return;
       }
 
-      var sampleHours = sampleMinutes / 60.0;
+      // DAC Formula
+      const DACValue = mode === "beta" ? 1e-8 : 3e-12;
+      const filterFactor = mode === "alpha" ? 0.7 : 1;
+      const dacFraction = netCPM / (volume * filterFactor * DPM_PER_UCI * efficiency * DACValue);
+      const formattedDAC = dacFraction.toExponential(2);
 
-      // Flow & volume
-      var flowLpm = parseFloat(document.getElementById('flowLpm').value);
-      if (isNaN(flowLpm) || flowLpm <= 0) {
-        errorDiv.textContent = "Enter a valid flow rate (L/min) > 0.";
-        return;
-      }
+      let color = "black";
+      if (dacFraction >= 0.3) color = "red";
+      else if (dacFraction >= 0.1) color = "goldenrod";
 
-      var volumeML = sampleMinutes * flowLpm * 1000.0;
-      var volumeM3 = volumeML / 1.0e6;
-
-      // Efficiency
-      var eff = parseFloat(document.getElementById('eff').value);
-      if (isNaN(eff) || eff <= 0) {
-        errorDiv.textContent = "Enter a valid detector efficiency (decimal) > 0.";
-        return;
-      }
-
-      var netCpm;
-      var detailsCounts = "";
-
-      if (mode === "beta") {
-        var grossBeta = parseFloat(document.getElementById('grossBeta').value);
-        var bkgBeta = parseFloat(document.getElementById('bkgBeta').value);
-        if (isNaN(grossBeta) || isNaN(bkgBeta)) {
-          errorDiv.textContent = "Enter gross and background β/γ (cpm).";
-          return;
-        }
-        netCpm = grossBeta - bkgBeta;
-        if (netCpm < 0) netCpm = 0;
-
-        detailsCounts += "<strong>Gross β/γ:</strong> " + grossBeta.toFixed(1) + " cpm<br>";
-        detailsCounts += "<strong>Background β/γ:</strong> " + bkgBeta.toFixed(1) + " cpm<br>";
-        detailsCounts += "<strong>Net β/γ:</strong> " + netCpm.toFixed(1) + " cpm<br>";
-      } else {
-        var grossAlpha10 = parseFloat(document.getElementById('grossAlpha10').value);
-        var bkgAlphaCpm = parseFloat(document.getElementById('bkgAlphaCpm').value);
-        if (isNaN(grossAlpha10) || isNaN(bkgAlphaCpm)) {
-          errorDiv.textContent = "Enter gross α counts (10 min) and background α (cpm).";
-          return;
-        }
-        var grossAlphaCpm = grossAlpha10 / 10.0;
-        netCpm = grossAlphaCpm - bkgAlphaCpm;
-        if (netCpm < 0) netCpm = 0;
-
-        detailsCounts += "<strong>Gross α counts (10 min):</strong> " + grossAlpha10.toFixed(1) + "<br>";
-        detailsCounts += "<strong>Gross α:</strong> " + grossAlphaCpm.toFixed(2) + " cpm<br>";
-        detailsCounts += "<strong>Background α:</strong> " + bkgAlphaCpm.toFixed(2) + " cpm<br>";
-        detailsCounts += "<strong>Net α:</strong> " + netCpm.toFixed(2) + " cpm<br>";
-      }
-
-      // fDAC chain:
-      // conc (µCi/mL) = Net cpm / (eff * 2.22e6 * Volume(mL))
-      // fDAC = conc / DAC
-      var dacConst = (mode === "beta") ? DAC_CONST_BETA : DAC_CONST_ALPHA;
-
-      var conc_uCi_per_mL = netCpm / (eff * DPM_PER_UCI * volumeML);
-      var fDAC = conc_uCi_per_mL / dacConst;
-
-      var html = "";
-
-      html += "<strong>Mode:</strong> " + (mode === "beta" ? "Beta / Gamma (Co-60)" : "Alpha (Am-241)") + "<br><br>";
-      html += "<strong>Sample Time:</strong> " + sampleMinutes + " min (" + sampleHours.toFixed(2) + " h)<br>";
-      html += "<strong>Flow Rate:</strong> " + flowLpm.toFixed(2) + " L/min<br>";
-      html += "<strong>Total Volume:</strong> " + formatSci(volumeML, 3) + " mL<br>";
-      html += "<strong>Total Volume:</strong> " + volumeM3.toFixed(4) + " m³<br>";
-      html += "<strong>Concentration:</strong> " + formatSci(conc_uCi_per_mL, 3) + " µCi/mL<br><br>";
-
-      html += detailsCounts + "<br>";
-      html += "<strong>Efficiency:</strong> " + eff.toFixed(3) + "<br><br>";
-
-      html += "<strong>fDAC (decimal):</strong> " + fDAC.toFixed(6) + "<br>";
-      html += "<strong>fDAC (sci, 2 decimals):</strong> " + formatSci(fDAC, 2) + "<br>";
-
-      var alertClass = "ok";
-      var alertText = "OK (< 0.1 DAC)";
-      if (fDAC >= 1.0) {
-        alertClass = "high";
-        alertText = "ALARM: ≥ 1 DAC – follow site procedures.";
-      } else if (fDAC >= 0.1) {
-        alertClass = "elevated";
-        alertText = "Elevated: ≥ 0.1 DAC – review per procedures.";
-      }
-
-      html += '<span class="alert-text ' + alertClass + '">' + alertText + '</span>';
-      results.innerHTML = html;
+      resultDAC.style.color = color;
+      resultDAC.textContent = `${mode === "alpha" ? "Alpha" : "Beta/Gamma"} fDAC: ${formattedDAC}`;
     }
-
-    // Initialize mode UI
-    updateModeUI();
   </script>
 </body>
 </html>
