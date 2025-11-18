@@ -33,6 +33,21 @@
       font-weight: bold;
       margin-top: 10px;
     }
+    .highlight-box {
+      border: 2px solid #ccc;
+      padding: 15px;
+      background: #ffffff;
+      border-radius: 8px;
+      margin-top: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      font-size: 1.4em;
+      text-align: center;
+    }
+    .small-note {
+      font-size: 0.9em;
+      color: #555;
+      margin-top: 8px;
+    }
     @media (max-width: 480px) {
       body { padding: 10px; }
       input, select, button { font-size: 1em; padding: 8px; }
@@ -92,9 +107,9 @@
 
   <div class="result" id="resultVolume"></div>
   <div class="result" id="resultNetCPM"></div>
-  <div class="result" id="resultDAC"></div>
-  <div class="result" id="resultComparison"></div>
-  <div class="result" id="resultReference"></div>
+  <div id="resultDAC" class="result highlight-box"></div>
+  <div id="resultComparison" class="result small-note"></div>
+  <div id="resultReference" class="result small-note"></div>
 
   <button onclick="clearForm()" style="background-color: #e74c3c; color: white;">Clear Data</button>
 
@@ -182,22 +197,34 @@
       const dacFraction = netCPM / (volume * filterFactor * DPM_PER_UCI * efficiency * DACValue);
       const formattedDAC = dacFraction.toExponential(2);
 
-      let color = "black";
-      if (dacFraction >= 0.3) color = "red";
-      else if (dacFraction >= 0.1) color = "goldenrod";
+      let fDACColor = "black";
+      let fDACEmoji = "";
 
-      resultDAC.style.color = color;
-      resultDAC.textContent = `${mode === "alpha" ? "Alpha" : "Beta/Gamma"} fDAC: ${formattedDAC}`;
-
-      if (!isNaN(mdc)) {
-        resultComparison.textContent = concentration_uCi >= mdc
-          ? `✅ Detected: Concentration (${concentration_uCi.toExponential(2)} μCi/mL) exceeds MDC (${mdc})`
-          : `⚠️ Not Detected: Concentration (${concentration_uCi.toExponential(2)} μCi/mL) is below MDC (${mdc})`;
-        resultComparison.style.color = concentration_uCi >= mdc ? "green" : "orangered";
+      if (dacFraction >= 0.3) {
+        fDACColor = "red";
+        fDACEmoji = "❌";
+      } else if (dacFraction >= 0.1) {
+        fDACColor = "goldenrod";
+        fDACEmoji = "⚠️";
       } else {
-        resultComparison.textContent = "";
+        fDACColor = "green";
+        fDACEmoji = "✅";
       }
 
+      resultDAC.style.color = fDACColor;
+      resultDAC.innerHTML = `${fDACEmoji} <strong>${mode === "alpha" ? "Alpha" : "Beta/Gamma"} fDAC:</strong> ${formattedDAC}`;
+
+      if (!isNaN(mdc)) {
+        if (concentration_uCi < mdc) {
+          resultComparison.innerHTML = `⚠️ Concentration (${concentration_uCi.toExponential(2)} μCi/mL) is < MDC (${mdc}). Results may be statistically invalid.`;
+          resultComparison.className = "result small-note";
+          resultComparison.style.color = "orangered";
+        } else {
+          resultComparison.textContent = "";
+        }
+      }
+
+      resultReference.className = "result small-note";
       resultReference.textContent =
         mode === "alpha"
           ? "📌 NRC Alpha DAC (Am-241 Class Y): 3.0E-12 μCi/cc"
