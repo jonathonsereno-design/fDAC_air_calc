@@ -53,14 +53,6 @@
       input, select, button { font-size: 1em; padding: 8px; }
     }
   </style>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker.js')
-        .then(reg => console.log('✅ Service worker registered:', reg))
-        .catch(err => console.error('❌ Service worker failed:', err));
-    }
-  </script>
 </head>
 <body>
   <h2>Air Sample fDAC Calculator</h2>
@@ -224,4 +216,15 @@
         }
       }
 
-      res
+      resultReference.className = "result small-note";
+      if (mode === "alpha") {
+        resultReference.innerHTML =
+          "📌 NRC Alpha DAC (Am-241 Class Y): 3.0E-12 μCi/cc<br/>📎 Alpha calculations include a 0.7 self-absorption filter factor per procedure.";
+      } else {
+        resultReference.textContent =
+          "📌 NRC Beta/Gamma DAC (Co-60 Class Y): 1.0E-8 μCi/cc";
+      }
+    }
+  </script>
+</body>
+</html>
