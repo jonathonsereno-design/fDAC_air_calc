@@ -16,23 +16,32 @@
       max-width: 700px;
       background: #f9f9f9;
     }
+
+    h2, h3 {
+      margin-top: 0;
+    }
+
     label {
       font-weight: bold;
       display: block;
       margin-top: 10px;
     }
+
     input, select, button {
       width: 100%;
       padding: 10px;
       margin-top: 5px;
       margin-bottom: 15px;
       font-size: 1em;
+      box-sizing: border-box;
     }
+
     .result {
       font-size: 1.2em;
       font-weight: bold;
       margin-top: 10px;
     }
+
     .highlight-box {
       border: 2px solid #ccc;
       padding: 15px;
@@ -43,80 +52,314 @@
       font-size: 1.4em;
       text-align: center;
     }
+
     .small-note {
       font-size: 0.9em;
       color: #555;
       margin-top: 8px;
     }
+
+    .volume-box,
+    .lapel-box,
+    .status-box {
+      border: 1px solid #cfd8dc;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .volume-label {
+      font-size: 0.9em;
+      font-weight: bold;
+      color: #455a64;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .volume-value {
+      font-size: 1.15em;
+      font-weight: bold;
+      color: #000;
+      word-break: break-word;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab-button {
+      flex: 1;
+      border: none;
+      border-radius: 8px;
+      background: #dfe6e9;
+      color: #2d3436;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .tab-button.active {
+      background: #004466;
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .warning-note {
+      font-size: 0.95em;
+      font-weight: bold;
+      color: #b26a00;
+      background: #fff8e1;
+      border: 1px solid #f0c36d;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
+
+    .lapel-result {
+      font-size: 1.05em;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
     @media (max-width: 480px) {
-      body { padding: 10px; }
-      input, select, button { font-size: 1em; padding: 8px; }
+      body {
+        padding: 10px;
+      }
+
+      input, select, button {
+        font-size: 1em;
+        padding: 8px;
+      }
+
+      .tabs {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Air Sample fDAC Calculator</h2>
+  <h2>Air Sample Calculator</h2>
 
-  <label for="calculationMode">Calculation Mode</label>
-  <select id="calculationMode">
-    <option value="beta">Beta/Gamma</option>
-    <option value="alpha">Alpha</option>
-  </select>
-
-  <label for="timeOn">Time On (HHMM)</label>
-  <input type="text" id="timeOn" placeholder="e.g., 1730" />
-
-  <label for="timeOff">Time Off (HHMM)</label>
-  <input type="text" id="timeOff" placeholder="e.g., 1130" />
-
-  <label for="flowRate">Flow Rate</label>
-  <input type="number" id="flowRate" placeholder="e.g., 30" />
-
-  <label for="flowUnit">Flow Rate Unit</label>
-  <select id="flowUnit">
-    <option value="LPM">LPM</option>
-    <option value="CFM">ft³/min</option>
-  </select>
-
-  <label for="grossCPM">Gross Activity (CPM)</label>
-  <input type="number" id="grossCPM" placeholder="e.g., 150" />
-
-  <label for="backgroundCPM">Background Activity (CPM)</label>
-  <input type="number" id="backgroundCPM" placeholder="e.g., 20" />
-
-  <label for="efficiency">Detector Efficiency (decimal)</label>
-  <input type="number" id="efficiency" step="0.01" placeholder="e.g., 0.19" />
-
-  <label for="mdc">Instrument MDC (μCi/mL)</label>
-  <input type="number" id="mdc" placeholder="e.g., 5e-10" step="any" />
-
-  <div id="alphaCheckDiv" style="display: none;">
-    <input type="checkbox" id="alphaDivided" />
-    <label for="alphaDivided">I have divided gross counts by 10 (10-minute alpha count)</label>
+  <div class="tabs">
+    <button id="tabAirButton" class="tab-button active" onclick="showTab('air')">AIR SAMPLE</button>
+    <button id="tabLapelButton" class="tab-button" onclick="showTab('lapel')">LAPEL</button>
   </div>
 
-  <button onclick="calculateDAC()">Calculate fDAC</button>
+  <!-- AIR SAMPLE TAB -->
+  <div id="airTab" class="tab-content active">
+    <h3>Air Sample fDAC Calculator</h3>
 
-  <div class="result" id="resultVolume"></div>
-  <div class="result" id="resultNetCPM"></div>
-  <div id="resultDAC" class="result highlight-box"></div>
-  <div id="resultComparison" class="result small-note"></div>
-  <div id="resultReference" class="result small-note"></div>
+    <label for="calculationMode">Calculation Mode</label>
+    <select id="calculationMode">
+      <option value="beta">Beta/Gamma</option>
+      <option value="alpha">Alpha</option>
+    </select>
 
-  <button onclick="clearForm()" style="background-color: #e74c3c; color: white;">Clear Data</button>
+    <label for="timeOn">Time On (HHMM)</label>
+    <input type="text" id="timeOn" placeholder="e.g., 1730" />
+
+    <label for="timeOff">Time Off (HHMM)</label>
+    <input type="text" id="timeOff" placeholder="e.g., 1130" />
+
+    <label for="flowRate">Flow Rate</label>
+    <input type="number" id="flowRate" placeholder="e.g., 30" />
+
+    <label for="flowUnit">Flow Rate Unit</label>
+    <select id="flowUnit">
+      <option value="LPM">LPM</option>
+      <option value="CFM">ft³/min</option>
+    </select>
+
+    <div class="volume-box">
+      <div class="volume-label">TOTAL VOLUME</div>
+      <div id="totalVolumeDisplay" class="volume-value">-- cc</div>
+    </div>
+
+    <label for="grossCPM">Gross Activity (CPM)</label>
+    <input type="number" id="grossCPM" placeholder="e.g., 150" />
+
+    <label for="backgroundCPM">Background Activity (CPM)</label>
+    <input type="number" id="backgroundCPM" placeholder="e.g., 20" />
+
+    <label for="efficiency">Detector Efficiency (decimal)</label>
+    <input type="number" id="efficiency" step="0.01" placeholder="e.g., 0.19" />
+
+    <label for="mdc">Instrument MDC (μCi/mL)</label>
+    <input type="number" id="mdc" placeholder="e.g., 5e-10" step="any" />
+
+    <div id="alphaCheckDiv" style="display: none;">
+      <input type="checkbox" id="alphaDivided" />
+      <label for="alphaDivided">I have divided gross counts by 10 (10-minute alpha count)</label>
+    </div>
+
+    <button onclick="calculateDAC()">Calculate fDAC</button>
+
+    <div class="result" id="resultVolume"></div>
+    <div class="result" id="resultNetCPM"></div>
+    <div id="resultDAC" class="result highlight-box"></div>
+    <div id="resultComparison" class="result small-note"></div>
+    <div id="resultReference" class="result small-note"></div>
+
+    <button onclick="clearForm()" style="background-color: #e74c3c; color: white;">Clear Data</button>
+  </div>
+
+  <!-- LAPEL TAB -->
+  <div id="lapelTab" class="tab-content">
+    <h3>Lapel Sample Alpha Analysis</h3>
+
+    <label for="lapelAli">ALI</label>
+    <input type="number" id="lapelAli" value="0.01" step="any" />
+
+    <label for="lapelFlowRate">Flow Rate (LPM)</label>
+    <input type="number" id="lapelFlowRate" placeholder="e.g., 2" step="any" />
+
+    <label for="lapelSelfAbsorption">Self-Absorption Factor</label>
+    <input type="number" id="lapelSelfAbsorption" value="0.7" step="any" />
+
+    <div class="lapel-box">
+      <div class="volume-label">10 mRem CEDE VALUE</div>
+      <div id="lapelCedeValueDisplay" class="volume-value">-- dpm</div>
+    </div>
+
+    <label for="lapelCounterMDA">Counter MDA (dpm)</label>
+    <input type="number" id="lapelCounterMDA" placeholder="Enter counter MDA" step="any" />
+
+    <div id="lapelMDAStatus" class="small-note"></div>
+
+    <label for="lapelInstrumentType">Instrument Type</label>
+    <select id="lapelInstrumentType">
+      <option value="isolo">iSolo</option>
+      <option value="sac4">SAC 4</option>
+    </select>
+
+    <div id="lapelSac4Reminder" class="warning-note" style="display: none;">
+      ⚠️ SAC 4 reminder: Lapel samples are counted for 10 minutes. Enter displayed gross counts; the calculator will divide gross counts by 10 to obtain CPM before converting to DPM.
+    </div>
+
+    <div id="lapelISoloSection">
+      <label for="lapelNetActivityDirect">Net Activity (dpm)</label>
+      <input type="number" id="lapelNetActivityDirect" placeholder="Read directly from iSolo" step="any" />
+    </div>
+
+    <div id="lapelSac4Section" style="display: none;">
+      <label for="lapelGrossCounts">Gross Activity (counts)</label>
+      <input type="number" id="lapelGrossCounts" placeholder="Displayed 10-minute gross counts" step="any" />
+
+      <label for="lapelBackground">Background (cpm)</label>
+      <input type="number" id="lapelBackground" placeholder="Enter daily background in cpm" step="any" />
+
+      <label for="lapelEfficiency">Efficiency (decimal)</label>
+      <input type="number" id="lapelEfficiency" placeholder="e.g., 0.19" step="any" />
+    </div>
+
+    <button onclick="calculateLapel()">Calculate Lapel</button>
+
+    <div class="status-box">
+      <div id="lapelNetCPMResult" class="lapel-result"></div>
+      <div id="lapelNetDPMResult" class="lapel-result"></div>
+      <div id="lapelDispositionMDA" class="lapel-result"></div>
+      <div id="lapelDispositionCEDE" class="lapel-result"></div>
+    </div>
+
+    <div class="small-note">
+      Reference equation: 10 mrem CEDE = (222.22)(ALI)(F)(S)
+    </div>
+
+    <button onclick="clearLapelForm()" style="background-color: #e74c3c; color: white;">Clear Lapel Data</button>
+  </div>
 
   <script>
     const DPM_PER_UCI = 2.22e6;
+    const LAPEL_CONSTANT = 222.22;
+
+    function showTab(tabName) {
+      const airTab = document.getElementById("airTab");
+      const lapelTab = document.getElementById("lapelTab");
+      const tabAirButton = document.getElementById("tabAirButton");
+      const tabLapelButton = document.getElementById("tabLapelButton");
+
+      airTab.classList.remove("active");
+      lapelTab.classList.remove("active");
+      tabAirButton.classList.remove("active");
+      tabLapelButton.classList.remove("active");
+
+      if (tabName === "air") {
+        airTab.classList.add("active");
+        tabAirButton.classList.add("active");
+      } else {
+        lapelTab.classList.add("active");
+        tabLapelButton.classList.add("active");
+      }
+    }
 
     document.getElementById("calculationMode").addEventListener("change", function () {
       const mode = this.value;
       document.getElementById("alphaCheckDiv").style.display = (mode === "alpha") ? "block" : "none";
     });
 
+    document.getElementById("lapelInstrumentType").addEventListener("change", function () {
+      const type = this.value;
+      const isISolo = type === "isolo";
+
+      document.getElementById("lapelISoloSection").style.display = isISolo ? "block" : "none";
+      document.getElementById("lapelSac4Section").style.display = isISolo ? "none" : "block";
+      document.getElementById("lapelSac4Reminder").style.display = isISolo ? "none" : "block";
+    });
+
     function convertToMinutes(timeStr) {
       const hours = parseInt(timeStr.slice(0, 2), 10);
       const minutes = parseInt(timeStr.slice(2), 10);
       return hours * 60 + minutes;
+    }
+
+    function calculateTotalVolume() {
+      const timeOn = document.getElementById("timeOn").value;
+      const timeOff = document.getElementById("timeOff").value;
+      const flowRate = parseFloat(document.getElementById("flowRate").value);
+      const flowUnit = document.getElementById("flowUnit").value;
+
+      if (
+        isNaN(flowRate) ||
+        !/^\d{4}$/.test(timeOn) ||
+        !/^\d{4}$/.test(timeOff)
+      ) {
+        return null;
+      }
+
+      const onMinutes = convertToMinutes(timeOn);
+      const offMinutes = convertToMinutes(timeOff);
+      const duration = (offMinutes < onMinutes)
+        ? (1440 - onMinutes + offMinutes)
+        : (offMinutes - onMinutes);
+
+      const flowCC = flowUnit === "LPM" ? flowRate * 1000 : flowRate * 28300;
+      return duration * flowCC;
+    }
+
+    function updateTotalVolumeDisplay() {
+      const totalVolumeDisplay = document.getElementById("totalVolumeDisplay");
+      const volume = calculateTotalVolume();
+
+      if (volume === null) {
+        totalVolumeDisplay.textContent = "-- cc";
+        return;
+      }
+
+      totalVolumeDisplay.textContent = `${volume.toLocaleString("en-US", {
+        maximumFractionDigits: 0
+      })} cc`;
     }
 
     function clearForm() {
@@ -129,6 +372,8 @@
       document.getElementById("flowUnit").selectedIndex = 0;
       document.getElementById("calculationMode").selectedIndex = 0;
       document.getElementById("alphaDivided").checked = false;
+      document.getElementById("alphaCheckDiv").style.display = "none";
+      document.getElementById("totalVolumeDisplay").textContent = "-- cc";
 
       ["resultVolume", "resultNetCPM", "resultDAC", "resultComparison", "resultReference"].forEach(id => {
         const el = document.getElementById(id);
@@ -166,16 +411,21 @@
       const onMinutes = convertToMinutes(timeOn);
       const offMinutes = convertToMinutes(timeOff);
       const duration = (offMinutes < onMinutes) ? (1440 - onMinutes + offMinutes) : (offMinutes - onMinutes);
-      const flowML = flowUnit === "LPM" ? flowRate * 1000 : flowRate * 28300;
-      const volume = duration * flowML;
-      resultVolume.textContent = `Total Volume Collected: ${volume.toExponential(4)} mL`;
+      const flowCC = flowUnit === "LPM" ? flowRate * 1000 : flowRate * 28300;
+      const volume = duration * flowCC;
+
+      document.getElementById("totalVolumeDisplay").textContent = `${volume.toLocaleString("en-US", {
+        maximumFractionDigits: 0
+      })} cc`;
+
+      resultVolume.textContent = `Total Volume Collected: ${volume.toExponential(4)} cc`;
 
       const minVolume = mode === "beta" ? 1.5e5 : 3.0e6;
       if (volume < minVolume) {
-        alert(`⚠️ WARNING: Volume (${volume.toExponential(2)} mL) is below procedural minimum for ${mode.toUpperCase()}.\nRefer to procedure for extended count time or re-sampling.`);
+        alert(`⚠️ WARNING: Volume (${volume.toExponential(2)} cc) is below procedural minimum for ${mode.toUpperCase()}.\nRefer to procedure for extended count time or re-sampling.`);
       }
 
-      let netCPM = gross - background;
+      const netCPM = gross - background;
       resultNetCPM.textContent = `Net Activity: ${netCPM.toFixed(2)} CPM`;
 
       if (mode === "alpha" && !alphaDivided) {
@@ -214,6 +464,8 @@
         } else {
           resultComparison.textContent = "";
         }
+      } else {
+        resultComparison.textContent = "";
       }
 
       resultReference.className = "result small-note";
@@ -225,6 +477,144 @@
           "📌 NRC Beta/Gamma DAC (Co-60 Class Y): 1.0E-8 μCi/cc";
       }
     }
+
+    function updateLapelCedeValueDisplay() {
+      const ali = parseFloat(document.getElementById("lapelAli").value);
+      const flowRate = parseFloat(document.getElementById("lapelFlowRate").value);
+      const selfAbsorption = parseFloat(document.getElementById("lapelSelfAbsorption").value);
+      const display = document.getElementById("lapelCedeValueDisplay");
+
+      if (isNaN(ali) || isNaN(flowRate) || isNaN(selfAbsorption)) {
+        display.textContent = "-- dpm";
+        return null;
+      }
+
+      const value = LAPEL_CONSTANT * ali * flowRate * selfAbsorption;
+      display.textContent = `${value.toFixed(2)} dpm`;
+      return value;
+    }
+
+    function calculateLapel() {
+      const ali = parseFloat(document.getElementById("lapelAli").value);
+      const flowRate = parseFloat(document.getElementById("lapelFlowRate").value);
+      const selfAbsorption = parseFloat(document.getElementById("lapelSelfAbsorption").value);
+      const counterMDA = parseFloat(document.getElementById("lapelCounterMDA").value);
+      const instrumentType = document.getElementById("lapelInstrumentType").value;
+
+      const lapelMDAStatus = document.getElementById("lapelMDAStatus");
+      const lapelNetCPMResult = document.getElementById("lapelNetCPMResult");
+      const lapelNetDPMResult = document.getElementById("lapelNetDPMResult");
+      const lapelDispositionMDA = document.getElementById("lapelDispositionMDA");
+      const lapelDispositionCEDE = document.getElementById("lapelDispositionCEDE");
+
+      if (isNaN(ali) || isNaN(flowRate) || isNaN(selfAbsorption)) {
+        alert("Please fill in ALI, Flow Rate, and Self-Absorption Factor.");
+        return;
+      }
+
+      const tenMremCedeValue = LAPEL_CONSTANT * ali * flowRate * selfAbsorption;
+      document.getElementById("lapelCedeValueDisplay").textContent = `${tenMremCedeValue.toFixed(2)} dpm`;
+
+      if (!isNaN(counterMDA)) {
+        if (counterMDA > tenMremCedeValue) {
+          lapelMDAStatus.textContent = `❌ Counter MDA (${counterMDA}) is greater than the 10 mRem CEDE value (${tenMremCedeValue.toFixed(2)}).`;
+          lapelMDAStatus.style.color = "red";
+        } else if (counterMDA === tenMremCedeValue) {
+          lapelMDAStatus.textContent = `⚠️ Counter MDA (${counterMDA}) is equal to the 10 mRem CEDE value (${tenMremCedeValue.toFixed(2)}).`;
+          lapelMDAStatus.style.color = "goldenrod";
+        } else {
+          lapelMDAStatus.textContent = `✅ Counter MDA (${counterMDA}) is below the 10 mRem CEDE value (${tenMremCedeValue.toFixed(2)}).`;
+          lapelMDAStatus.style.color = "green";
+        }
+      } else {
+        lapelMDAStatus.textContent = "";
+      }
+
+      let netDPM;
+      let netCPMText = "";
+
+      if (instrumentType === "isolo") {
+        const netActivityDirect = parseFloat(document.getElementById("lapelNetActivityDirect").value);
+
+        if (isNaN(netActivityDirect)) {
+          alert("Please enter Net Activity (dpm) for iSolo.");
+          return;
+        }
+
+        netDPM = netActivityDirect;
+        netCPMText = "Net CPM: N/A for iSolo";
+      } else {
+        const grossCounts = parseFloat(document.getElementById("lapelGrossCounts").value);
+        const background = parseFloat(document.getElementById("lapelBackground").value);
+        const efficiency = parseFloat(document.getElementById("lapelEfficiency").value);
+
+        if (isNaN(grossCounts) || isNaN(background) || isNaN(efficiency)) {
+          alert("Please fill in Gross Activity, Background, and Efficiency for SAC 4.");
+          return;
+        }
+
+        const grossCPM = grossCounts / 10;
+        const netCPM = grossCPM - background;
+        netDPM = netCPM / efficiency;
+        netCPMText = `Net CPM: ${netCPM.toFixed(2)} cpm`;
+      }
+
+      lapelNetCPMResult.textContent = netCPMText;
+      lapelNetDPMResult.textContent = `Net Activity: ${netDPM.toFixed(2)} dpm`;
+
+      if (!isNaN(counterMDA)) {
+        if (netDPM > counterMDA) {
+          lapelDispositionMDA.textContent = "⚠️ Net activity is greater than instrument MDA. Perform decay counts per procedure.";
+          lapelDispositionMDA.style.color = "orangered";
+        } else {
+          lapelDispositionMDA.textContent = "✅ Net activity is not greater than instrument MDA.";
+          lapelDispositionMDA.style.color = "green";
+        }
+      } else {
+        lapelDispositionMDA.textContent = "";
+      }
+
+      if (netDPM >= tenMremCedeValue) {
+        lapelDispositionCEDE.textContent = "❌ Net activity is greater than or equal to the 10 mRem CEDE value. CEDE calculation is required.";
+        lapelDispositionCEDE.style.color = "red";
+      } else {
+        lapelDispositionCEDE.textContent = "✅ Net activity is below the 10 mRem CEDE value.";
+        lapelDispositionCEDE.style.color = "green";
+      }
+    }
+
+    function clearLapelForm() {
+      document.getElementById("lapelAli").value = "0.01";
+      document.getElementById("lapelFlowRate").value = "";
+      document.getElementById("lapelSelfAbsorption").value = "0.7";
+      document.getElementById("lapelCounterMDA").value = "";
+      document.getElementById("lapelInstrumentType").selectedIndex = 0;
+      document.getElementById("lapelNetActivityDirect").value = "";
+      document.getElementById("lapelGrossCounts").value = "";
+      document.getElementById("lapelBackground").value = "";
+      document.getElementById("lapelEfficiency").value = "";
+
+      document.getElementById("lapelCedeValueDisplay").textContent = "-- dpm";
+      document.getElementById("lapelMDAStatus").textContent = "";
+      document.getElementById("lapelNetCPMResult").textContent = "";
+      document.getElementById("lapelNetDPMResult").textContent = "";
+      document.getElementById("lapelDispositionMDA").textContent = "";
+      document.getElementById("lapelDispositionCEDE").textContent = "";
+
+      document.getElementById("lapelISoloSection").style.display = "block";
+      document.getElementById("lapelSac4Section").style.display = "none";
+      document.getElementById("lapelSac4Reminder").style.display = "none";
+    }
+
+    ["timeOn", "timeOff", "flowRate", "flowUnit"].forEach(id => {
+      document.getElementById(id).addEventListener("input", updateTotalVolumeDisplay);
+      document.getElementById(id).addEventListener("change", updateTotalVolumeDisplay);
+    });
+
+    ["lapelAli", "lapelFlowRate", "lapelSelfAbsorption"].forEach(id => {
+      document.getElementById(id).addEventListener("input", updateLapelCedeValueDisplay);
+      document.getElementById(id).addEventListener("change", updateLapelCedeValueDisplay);
+    });
   </script>
 </body>
 </html>
