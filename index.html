@@ -15,11 +15,15 @@
       margin: auto;
       max-width: 700px;
       background: #f9f9f9;
+      color: #111;
     }
 
-    h2, h3 {
-      margin-top: 0;
+    body.dark {
+      background: #121212;
+      color: #f1f1f1;
     }
+
+    h2, h3 { margin-top: 0; }
 
     label {
       font-weight: bold;
@@ -34,6 +38,29 @@
       margin-bottom: 15px;
       font-size: 1em;
       box-sizing: border-box;
+    }
+
+    body.dark input,
+    body.dark select {
+      background: #1f1f1f;
+      color: #f1f1f1;
+      border: 1px solid #555;
+    }
+
+    .top-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .dark-toggle {
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
     .primary-button {
@@ -58,6 +85,17 @@
       cursor: pointer;
     }
 
+    .copy-button {
+      background: #607d8b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      padding: 9px;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
     .result {
       font-size: 1.2em;
       font-weight: bold;
@@ -75,10 +113,22 @@
       text-align: center;
     }
 
+    body.dark .highlight-box,
+    body.dark .volume-box,
+    body.dark .lapel-box,
+    body.dark .status-box {
+      background: #1e1e1e;
+      border-color: #555;
+    }
+
     .small-note {
       font-size: 0.9em;
       color: #555;
       margin-top: 8px;
+    }
+
+    body.dark .small-note {
+      color: #ccc;
     }
 
     .volume-box,
@@ -93,7 +143,7 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
 
-     .volume-label {
+    .volume-label {
       font-size: 0.9em;
       font-weight: bold;
       color: #455a64;
@@ -101,11 +151,19 @@
       text-transform: uppercase;
     }
 
+    body.dark .volume-label {
+      color: #b0bec5;
+    }
+
     .volume-value {
       font-size: 1.15em;
       font-weight: bold;
       color: #000;
       word-break: break-word;
+    }
+
+    body.dark .volume-value {
+      color: #fff;
     }
 
     .tabs {
@@ -129,15 +187,11 @@
       color: white;
     }
 
-    .tab-content {
-      display: none;
-    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
-    .tab-content.active {
-      display: block;
-    }
-
-    .warning-note {
+    .warning-note,
+    .alpha-warning {
       font-size: 0.95em;
       font-weight: bold;
       color: #b26a00;
@@ -149,67 +203,43 @@
       margin-bottom: 15px;
     }
 
+    .alpha-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+      color: #b26a00;
+      cursor: pointer;
+    }
+
+    .alpha-checkbox input[type="checkbox"] {
+      width: auto;
+      transform: scale(1.5);
+      cursor: pointer;
+      margin: 0;
+    }
+
     .lapel-result {
       font-size: 1.05em;
       font-weight: bold;
       margin-top: 8px;
     }
 
-.alpha-warning {
-  background: #fff8e1;
-  border: 1px solid #f0c36d;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 15px;
-}
-
-.alpha-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: bold;
-  color: #b26a00;
-  cursor: pointer;
-}
-
-.alpha-checkbox input[type="checkbox"] {
-  transform: scale(1.5);
-  cursor: pointer;
-}
-
-@media (max-width: 480px) {
-  body {
-    padding: 10px;
-  }
-
-  input, select, button {
-    font-size: 1em;
-    padding: 8px;
-  }
-}
     @media (max-width: 480px) {
-      body {
-        padding: 10px;
-      }
-
-      input, select, button {
-        font-size: 1em;
-        padding: 8px;
-      }
-
-      .primary-button {
-        padding: 14px;
-        font-size: 1.1em;
-      }
-
-      .tabs {
-        flex-direction: column;
-      }
+      body { padding: 10px; }
+      input, select, button { font-size: 1em; padding: 8px; }
+      .primary-button { padding: 14px; font-size: 1.1em; }
+      .tabs, .top-controls { flex-direction: column; }
     }
   </style>
 </head>
+
 <body>
   <h2>Air Sample Calculator</h2>
+
+  <div class="top-controls">
+    <button id="darkModeToggle" class="dark-toggle" onclick="toggleDarkMode()">Dark Mode</button>
+  </div>
 
   <div class="tabs">
     <button id="tabAirButton" class="tab-button active" onclick="showTab('air')">AIR SAMPLE</button>
@@ -243,6 +273,7 @@
     <div class="volume-box">
       <div class="volume-label">TOTAL VOLUME</div>
       <div id="totalVolumeDisplay" class="volume-value">-- cc</div>
+      <button class="copy-button" onclick="copyElementText('totalVolumeDisplay')">Copy Total Volume</button>
     </div>
 
     <label for="grossCPM">Gross Activity (CPM)</label>
@@ -264,17 +295,18 @@
     <input type="number" id="mdc" placeholder="e.g., 5e-10" step="any" />
 
     <div id="alphaCheckDiv" class="alpha-warning" style="display: none;">
-  <label class="alpha-checkbox">
-    <input type="checkbox" id="alphaDivided" />
-    <span>I have divided gross counts by 10 (10-minute alpha count)</span>
-  </label>
-</div>
+      <label class="alpha-checkbox">
+        <input type="checkbox" id="alphaDivided" />
+        <span>I have divided gross counts by 10 (10-minute alpha count)</span>
+      </label>
+    </div>
 
     <button class="primary-button" onclick="calculateDAC()">Calculate fDAC</button>
 
     <div class="result" id="resultVolume"></div>
     <div class="result" id="resultNetCPM"></div>
     <div id="resultDAC" class="result highlight-box"></div>
+    <button class="copy-button" onclick="copyElementText('resultDAC')">Copy fDAC</button>
     <div id="resultComparison" class="result small-note"></div>
     <div id="resultReference" class="result small-note"></div>
 
@@ -296,6 +328,7 @@
     <div class="lapel-box">
       <div class="volume-label">10 mRem CEDE VALUE</div>
       <div id="lapelCedeValueDisplay" class="volume-value">-- dpm</div>
+      <button class="copy-button" onclick="copyElementText('lapelCedeValueDisplay')">Copy 10 mRem CEDE Value</button>
     </div>
 
     <label for="lapelCounterMDA">Counter MDA (dpm)</label>
@@ -331,9 +364,10 @@
 
     <button class="primary-button" onclick="calculateLapel()">Calculate Lapel</button>
 
-    <div class="status-box">
+    <div id="lapelResultsBox" class="status-box">
       <div id="lapelNetCPMResult" class="lapel-result"></div>
       <div id="lapelNetDPMResult" class="lapel-result"></div>
+      <button class="copy-button" onclick="copyElementText('lapelNetDPMResult')">Copy Lapel Net Activity</button>
       <div id="lapelDispositionMDA" class="lapel-result"></div>
       <div id="lapelDispositionCEDE" class="lapel-result"></div>
     </div>
@@ -349,44 +383,76 @@
     const DPM_PER_UCI = 2.22e6;
     const LAPEL_CONSTANT = 222.22;
 
-    function showTab(tabName) {
-      const airTab = document.getElementById("airTab");
-      const lapelTab = document.getElementById("lapelTab");
-      const tabAirButton = document.getElementById("tabAirButton");
-      const tabLapelButton = document.getElementById("tabLapelButton");
+    function vibrateShort() {
+      if (navigator.vibrate) navigator.vibrate(40);
+    }
 
-      airTab.classList.remove("active");
-      lapelTab.classList.remove("active");
-      tabAirButton.classList.remove("active");
-      tabLapelButton.classList.remove("active");
+    function scrollToElement(id) {
+      document.getElementById(id).scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    }
+
+    function copyElementText(id) {
+      const text = document.getElementById(id).innerText.trim();
+
+      if (!text || text.includes("--")) {
+        alert("Nothing to copy yet.");
+        return;
+      }
+
+      navigator.clipboard.writeText(text).then(() => {
+        vibrateShort();
+        alert("Copied!");
+      }).catch(() => {
+        alert("Copy failed. You can manually select and copy the value.");
+      });
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark");
+      const isDark = document.body.classList.contains("dark");
+      localStorage.setItem("darkMode", isDark ? "on" : "off");
+      document.getElementById("darkModeToggle").textContent = isDark ? "Light Mode" : "Dark Mode";
+    }
+
+    function loadDarkModePreference() {
+      const savedMode = localStorage.getItem("darkMode");
+      if (savedMode === "on") {
+        document.body.classList.add("dark");
+        document.getElementById("darkModeToggle").textContent = "Light Mode";
+      }
+    }
+
+    function showTab(tabName) {
+      document.getElementById("airTab").classList.remove("active");
+      document.getElementById("lapelTab").classList.remove("active");
+      document.getElementById("tabAirButton").classList.remove("active");
+      document.getElementById("tabLapelButton").classList.remove("active");
 
       if (tabName === "air") {
-        airTab.classList.add("active");
-        tabAirButton.classList.add("active");
+        document.getElementById("airTab").classList.add("active");
+        document.getElementById("tabAirButton").classList.add("active");
       } else {
-        lapelTab.classList.add("active");
-        tabLapelButton.classList.add("active");
+        document.getElementById("lapelTab").classList.add("active");
+        document.getElementById("tabLapelButton").classList.add("active");
       }
     }
 
     document.getElementById("calculationMode").addEventListener("change", function () {
-      const mode = this.value;
-      document.getElementById("alphaCheckDiv").style.display = (mode === "alpha") ? "block" : "none";
+      document.getElementById("alphaCheckDiv").style.display = this.value === "alpha" ? "block" : "none";
     });
 
     document.getElementById("lapelInstrumentType").addEventListener("change", function () {
-      const type = this.value;
-      const isISolo = type === "isolo";
-
+      const isISolo = this.value === "isolo";
       document.getElementById("lapelISoloSection").style.display = isISolo ? "block" : "none";
       document.getElementById("lapelSac4Section").style.display = isISolo ? "none" : "block";
       document.getElementById("lapelSac4Reminder").style.display = isISolo ? "none" : "block";
     });
 
     function convertToMinutes(timeStr) {
-      const hours = parseInt(timeStr.slice(0, 2), 10);
-      const minutes = parseInt(timeStr.slice(2), 10);
-      return hours * 60 + minutes;
+      return parseInt(timeStr.slice(0, 2), 10) * 60 + parseInt(timeStr.slice(2), 10);
     }
 
     function calculateTotalVolume() {
@@ -395,44 +461,27 @@
       const flowRate = parseFloat(document.getElementById("flowRate").value);
       const flowUnit = document.getElementById("flowUnit").value;
 
-      if (
-        isNaN(flowRate) ||
-        !/^\d{4}$/.test(timeOn) ||
-        !/^\d{4}$/.test(timeOff)
-      ) {
-        return null;
-      }
+      if (isNaN(flowRate) || !/^\d{4}$/.test(timeOn) || !/^\d{4}$/.test(timeOff)) return null;
 
       const onMinutes = convertToMinutes(timeOn);
       const offMinutes = convertToMinutes(timeOff);
-      const duration = (offMinutes < onMinutes)
-        ? (1440 - onMinutes + offMinutes)
-        : (offMinutes - onMinutes);
-
+      const duration = offMinutes < onMinutes ? 1440 - onMinutes + offMinutes : offMinutes - onMinutes;
       const flowCC = flowUnit === "LPM" ? flowRate * 1000 : flowRate * 28300;
+
       return duration * flowCC;
     }
 
     function updateTotalVolumeDisplay() {
-      const totalVolumeDisplay = document.getElementById("totalVolumeDisplay");
       const volume = calculateTotalVolume();
-
-      if (volume === null) {
-        totalVolumeDisplay.textContent = "-- cc";
-        return;
-      }
-
-      totalVolumeDisplay.textContent = `${volume.toLocaleString("en-US", {
-        maximumFractionDigits: 0
-      })} cc`;
+      document.getElementById("totalVolumeDisplay").textContent = volume === null
+        ? "-- cc"
+        : `${volume.toLocaleString("en-US", { maximumFractionDigits: 0 })} cc`;
     }
 
     function clearForm() {
-      const fields = [
-        "timeOn", "timeOff", "flowRate", "grossCPM", "backgroundCPM",
-        "efficiency", "mdc"
-      ];
-      fields.forEach(id => document.getElementById(id).value = "");
+      ["timeOn", "timeOff", "flowRate", "grossCPM", "backgroundCPM", "efficiency", "mdc"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
 
       document.getElementById("flowUnit").selectedIndex = 0;
       document.getElementById("calculationMode").selectedIndex = 0;
@@ -444,33 +493,20 @@
       ["resultVolume", "resultNetCPM", "resultDAC", "resultComparison", "resultReference"].forEach(id => {
         const el = document.getElementById(id);
         el.textContent = "";
-        el.style.color = "black";
+        el.style.color = "";
       });
     }
 
     function calculateDAC() {
       const mode = document.getElementById("calculationMode").value;
-      const timeOn = document.getElementById("timeOn").value;
-      const timeOff = document.getElementById("timeOff").value;
-      const flowRate = parseFloat(document.getElementById("flowRate").value);
-      const flowUnit = document.getElementById("flowUnit").value;
       const gross = parseFloat(document.getElementById("grossCPM").value);
       const background = parseFloat(document.getElementById("backgroundCPM").value);
       const efficiency = parseFloat(document.getElementById("efficiency").value);
       const activityReportUnit = document.getElementById("activityReportUnit").value;
       const mdc = parseFloat(document.getElementById("mdc").value);
-      const alphaDivided = document.getElementById("alphaDivided").checked;
+      const volume = calculateTotalVolume();
 
-      const resultVolume = document.getElementById("resultVolume");
-      const resultNetCPM = document.getElementById("resultNetCPM");
-      const resultDAC = document.getElementById("resultDAC");
-      const resultComparison = document.getElementById("resultComparison");
-      const resultReference = document.getElementById("resultReference");
-
-      if (
-        isNaN(flowRate) || isNaN(gross) || isNaN(background) || isNaN(efficiency) ||
-        !/^\d{4}$/.test(timeOn) || !/^\d{4}$/.test(timeOff)
-      ) {
+      if (volume === null || isNaN(gross) || isNaN(background) || isNaN(efficiency)) {
         alert("Please fill in all required fields correctly.");
         return;
       }
@@ -480,17 +516,11 @@
         return;
       }
 
-      const onMinutes = convertToMinutes(timeOn);
-      const offMinutes = convertToMinutes(timeOff);
-      const duration = (offMinutes < onMinutes) ? (1440 - onMinutes + offMinutes) : (offMinutes - onMinutes);
-      const flowCC = flowUnit === "LPM" ? flowRate * 1000 : flowRate * 28300;
-      const volume = duration * flowCC;
+      document.getElementById("totalVolumeDisplay").textContent =
+        `${volume.toLocaleString("en-US", { maximumFractionDigits: 0 })} cc`;
 
-      document.getElementById("totalVolumeDisplay").textContent = `${volume.toLocaleString("en-US", {
-        maximumFractionDigits: 0
-      })} cc`;
-
-      resultVolume.textContent = `Total Volume Collected: ${volume.toExponential(4)} cc`;
+      document.getElementById("resultVolume").textContent =
+        `Total Volume Collected: ${volume.toExponential(4)} cc`;
 
       const minVolume = mode === "beta" ? 1.5e5 : 3.0e6;
       if (volume < minVolume) {
@@ -499,13 +529,12 @@
 
       const netCPM = gross - background;
       const netDPM = netCPM / efficiency;
-      const reportedActivity = activityReportUnit === "dpm" ? netDPM : netCPM;
 
-      resultNetCPM.textContent = activityReportUnit === "dpm"
+      document.getElementById("resultNetCPM").textContent = activityReportUnit === "dpm"
         ? `Net Activity: ${netDPM.toFixed(2)} DPM`
         : `Net Activity: ${netCPM.toFixed(2)} CPM`;
 
-      if (mode === "alpha" && !alphaDivided) {
+      if (mode === "alpha" && !document.getElementById("alphaDivided").checked) {
         const proceed = confirm("❗Reminder: Gross counts must be divided by 10 for alpha (10 min count).\nProceed anyway?");
         if (!proceed) return;
       }
@@ -524,45 +553,36 @@
         dacFraction = netCPM / (volume * filterFactor * DPM_PER_UCI * efficiency * DACValue);
       }
 
-      const formattedDAC = dacFraction.toExponential(2);
-
-      let fDACColor = "black";
-      let fDACEmoji = "";
+      let color = "green";
+      let emoji = "✅";
 
       if (dacFraction >= 0.3) {
-        fDACColor = "red";
-        fDACEmoji = "❌";
+        color = "red";
+        emoji = "❌";
       } else if (dacFraction >= 0.1) {
-        fDACColor = "goldenrod";
-        fDACEmoji = "⚠️";
-      } else {
-        fDACColor = "green";
-        fDACEmoji = "✅";
+        color = "goldenrod";
+        emoji = "⚠️";
       }
 
-      resultDAC.style.color = fDACColor;
-      resultDAC.innerHTML = `${fDACEmoji} <strong>${mode === "alpha" ? "Alpha" : "Beta/Gamma"} fDAC:</strong> ${formattedDAC}`;
+      const resultDAC = document.getElementById("resultDAC");
+      resultDAC.style.color = color;
+      resultDAC.innerHTML = `${emoji} <strong>${mode === "alpha" ? "Alpha" : "Beta/Gamma"} fDAC:</strong> ${dacFraction.toExponential(2)}`;
 
-      if (!isNaN(mdc)) {
-        if (concentration_uCi < mdc) {
-          resultComparison.innerHTML = `⚠️ Concentration (${concentration_uCi.toExponential(2)} μCi/mL) is < MDC (${mdc}). Results may be statistically invalid.`;
-          resultComparison.className = "result small-note";
-          resultComparison.style.color = "orangered";
-        } else {
-          resultComparison.textContent = "";
-        }
+      const resultComparison = document.getElementById("resultComparison");
+      if (!isNaN(mdc) && concentration_uCi < mdc) {
+        resultComparison.innerHTML =
+          `⚠️ Concentration (${concentration_uCi.toExponential(2)} μCi/mL) is < MDC (${mdc}). Results may be statistically invalid.`;
+        resultComparison.style.color = "orangered";
       } else {
         resultComparison.textContent = "";
       }
 
-      resultReference.className = "result small-note";
-      if (mode === "alpha") {
-        resultReference.innerHTML =
-          "📌 NRC Alpha DAC (Am-241 Class Y): 3.0E-12 μCi/cc<br/>📎 Alpha calculations include a 0.7 self-absorption filter factor per procedure.";
-      } else {
-        resultReference.textContent =
-          "📌 NRC Beta/Gamma DAC (Co-60 Class Y): 1.0E-8 μCi/cc";
-      }
+      document.getElementById("resultReference").innerHTML = mode === "alpha"
+        ? "📌 NRC Alpha DAC (Am-241 Class Y): 3.0E-12 μCi/cc<br/>📎 Alpha calculations include a 0.7 self-absorption filter factor per procedure."
+        : "📌 NRC Beta/Gamma DAC (Co-60 Class Y): 1.0E-8 μCi/cc";
+
+      vibrateShort();
+      scrollToElement("resultDAC");
     }
 
     function updateLapelCedeValueDisplay() {
@@ -588,12 +608,6 @@
       const counterMDA = parseFloat(document.getElementById("lapelCounterMDA").value);
       const instrumentType = document.getElementById("lapelInstrumentType").value;
 
-      const lapelMDAStatus = document.getElementById("lapelMDAStatus");
-      const lapelNetCPMResult = document.getElementById("lapelNetCPMResult");
-      const lapelNetDPMResult = document.getElementById("lapelNetDPMResult");
-      const lapelDispositionMDA = document.getElementById("lapelDispositionMDA");
-      const lapelDispositionCEDE = document.getElementById("lapelDispositionCEDE");
-
       if (isNaN(ali) || isNaN(flowRate) || isNaN(selfAbsorption)) {
         alert("Please fill in ALI, Flow Rate, and Self-Absorption Factor.");
         return;
@@ -601,6 +615,8 @@
 
       const tenMremCedeValue = LAPEL_CONSTANT * ali * flowRate * selfAbsorption;
       document.getElementById("lapelCedeValueDisplay").textContent = `${tenMremCedeValue.toFixed(2)} dpm`;
+
+      const lapelMDAStatus = document.getElementById("lapelMDAStatus");
 
       if (!isNaN(counterMDA)) {
         if (counterMDA > tenMremCedeValue) {
@@ -613,30 +629,25 @@
           lapelMDAStatus.textContent = `✅ Counter MDA (${counterMDA}) is below the 10 mRem CEDE value (${tenMremCedeValue.toFixed(2)}).`;
           lapelMDAStatus.style.color = "green";
         }
-      } else {
-        lapelMDAStatus.textContent = "";
       }
 
       let netDPM;
-      let netCPMText = "";
+      let netCPMText;
 
       if (instrumentType === "isolo") {
-        const netActivityDirect = parseFloat(document.getElementById("lapelNetActivityDirect").value);
-
-        if (isNaN(netActivityDirect)) {
+        netDPM = parseFloat(document.getElementById("lapelNetActivityDirect").value);
+        if (isNaN(netDPM)) {
           alert("Please enter Net Activity (dpm) for iSolo.");
           return;
         }
-
-        netDPM = netActivityDirect;
         netCPMText = "Net CPM: N/A for iSolo";
       } else {
         const grossCounts = parseFloat(document.getElementById("lapelGrossCounts").value);
         const background = parseFloat(document.getElementById("lapelBackground").value);
         const efficiency = parseFloat(document.getElementById("lapelEfficiency").value);
 
-        if (isNaN(grossCounts) || isNaN(background) || isNaN(efficiency)) {
-          alert("Please fill in Gross Activity, Background, and Efficiency for SAC 4.");
+        if (isNaN(grossCounts) || isNaN(background) || isNaN(efficiency) || efficiency <= 0) {
+          alert("Please fill in Gross Activity, Background, and valid Efficiency for SAC 4.");
           return;
         }
 
@@ -646,28 +657,23 @@
         netCPMText = `Net CPM: ${netCPM.toFixed(2)} cpm`;
       }
 
-      lapelNetCPMResult.textContent = netCPMText;
-      lapelNetDPMResult.textContent = `Net Activity: ${netDPM.toFixed(2)} dpm`;
+      document.getElementById("lapelNetCPMResult").textContent = netCPMText;
+      document.getElementById("lapelNetDPMResult").textContent = `Net Activity: ${netDPM.toFixed(2)} dpm`;
 
       if (!isNaN(counterMDA)) {
-        if (netDPM > counterMDA) {
-          lapelDispositionMDA.textContent = "⚠️ Net activity is greater than instrument MDA. Perform decay counts per procedure.";
-          lapelDispositionMDA.style.color = "orangered";
-        } else {
-          lapelDispositionMDA.textContent = "✅ Net activity is not greater than instrument MDA.";
-          lapelDispositionMDA.style.color = "green";
-        }
-      } else {
-        lapelDispositionMDA.textContent = "";
+        document.getElementById("lapelDispositionMDA").textContent = netDPM > counterMDA
+          ? "⚠️ Net activity is greater than instrument MDA. Perform decay counts per procedure."
+          : "✅ Net activity is not greater than instrument MDA.";
+        document.getElementById("lapelDispositionMDA").style.color = netDPM > counterMDA ? "orangered" : "green";
       }
 
-      if (netDPM >= tenMremCedeValue) {
-        lapelDispositionCEDE.textContent = "❌ Net activity is greater than or equal to the 10 mRem CEDE value. CEDE calculation is required.";
-        lapelDispositionCEDE.style.color = "red";
-      } else {
-        lapelDispositionCEDE.textContent = "✅ Net activity is below the 10 mRem CEDE value.";
-        lapelDispositionCEDE.style.color = "green";
-      }
+      document.getElementById("lapelDispositionCEDE").textContent = netDPM >= tenMremCedeValue
+        ? "❌ Net activity is greater than or equal to the 10 mRem CEDE value. CEDE calculation is required."
+        : "✅ Net activity is below the 10 mRem CEDE value.";
+      document.getElementById("lapelDispositionCEDE").style.color = netDPM >= tenMremCedeValue ? "red" : "green";
+
+      vibrateShort();
+      scrollToElement("lapelResultsBox");
     }
 
     function clearLapelForm() {
@@ -681,12 +687,9 @@
       document.getElementById("lapelBackground").value = "";
       document.getElementById("lapelEfficiency").value = "";
 
-      document.getElementById("lapelCedeValueDisplay").textContent = "-- dpm";
-      document.getElementById("lapelMDAStatus").textContent = "";
-      document.getElementById("lapelNetCPMResult").textContent = "";
-      document.getElementById("lapelNetDPMResult").textContent = "";
-      document.getElementById("lapelDispositionMDA").textContent = "";
-      document.getElementById("lapelDispositionCEDE").textContent = "";
+      ["lapelCedeValueDisplay", "lapelMDAStatus", "lapelNetCPMResult", "lapelNetDPMResult", "lapelDispositionMDA", "lapelDispositionCEDE"].forEach(id => {
+        document.getElementById(id).textContent = id === "lapelCedeValueDisplay" ? "-- dpm" : "";
+      });
 
       document.getElementById("lapelISoloSection").style.display = "block";
       document.getElementById("lapelSac4Section").style.display = "none";
@@ -702,6 +705,8 @@
       document.getElementById(id).addEventListener("input", updateLapelCedeValueDisplay);
       document.getElementById(id).addEventListener("change", updateLapelCedeValueDisplay);
     });
+
+    loadDarkModePreference();
   </script>
 </body>
 </html>
