@@ -93,7 +93,7 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
 
-    .volume-label {
+     .volume-label {
       font-size: 0.9em;
       font-weight: bold;
       color: #455a64;
@@ -155,6 +155,38 @@
       margin-top: 8px;
     }
 
+.alpha-warning {
+  background: #fff8e1;
+  border: 1px solid #f0c36d;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+
+.alpha-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+  color: #b26a00;
+  cursor: pointer;
+}
+
+.alpha-checkbox input[type="checkbox"] {
+  transform: scale(1.5);
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  input, select, button {
+    font-size: 1em;
+    padding: 8px;
+  }
+}
     @media (max-width: 480px) {
       body {
         padding: 10px;
@@ -231,10 +263,12 @@
     <label for="mdc">Instrument MDC (μCi/mL)</label>
     <input type="number" id="mdc" placeholder="e.g., 5e-10" step="any" />
 
-    <div id="alphaCheckDiv" style="display: none;">
-      <input type="checkbox" id="alphaDivided" />
-      <label for="alphaDivided">I have divided gross counts by 10 (10-minute alpha count)</label>
-    </div>
+    <div id="alphaCheckDiv" class="alpha-warning" style="display: none;">
+  <label class="alpha-checkbox">
+    <input type="checkbox" id="alphaDivided" />
+    <span>I have divided gross counts by 10 (10-minute alpha count)</span>
+  </label>
+</div>
 
     <button class="primary-button" onclick="calculateDAC()">Calculate fDAC</button>
 
