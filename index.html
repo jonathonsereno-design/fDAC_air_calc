@@ -36,6 +36,28 @@
       box-sizing: border-box;
     }
 
+    .primary-button {
+      background: #004466;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 1.1em;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+
+    .clear-button {
+      background: #c0392b;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+    }
+
     .result {
       font-size: 1.2em;
       font-weight: bold;
@@ -143,6 +165,11 @@
         padding: 8px;
       }
 
+      .primary-button {
+        padding: 14px;
+        font-size: 1.1em;
+      }
+
       .tabs {
         flex-direction: column;
       }
@@ -157,7 +184,6 @@
     <button id="tabLapelButton" class="tab-button" onclick="showTab('lapel')">LAPEL</button>
   </div>
 
-  <!-- AIR SAMPLE TAB -->
   <div id="airTab" class="tab-content active">
     <h3>Air Sample fDAC Calculator</h3>
 
@@ -196,6 +222,12 @@
     <label for="efficiency">Detector Efficiency (decimal)</label>
     <input type="number" id="efficiency" step="0.01" placeholder="e.g., 0.19" />
 
+    <label for="activityReportUnit">Report Net Activity As</label>
+    <select id="activityReportUnit">
+      <option value="cpm">CPM</option>
+      <option value="dpm">DPM</option>
+    </select>
+
     <label for="mdc">Instrument MDC (μCi/mL)</label>
     <input type="number" id="mdc" placeholder="e.g., 5e-10" step="any" />
 
@@ -204,7 +236,7 @@
       <label for="alphaDivided">I have divided gross counts by 10 (10-minute alpha count)</label>
     </div>
 
-    <button onclick="calculateDAC()">Calculate fDAC</button>
+    <button class="primary-button" onclick="calculateDAC()">Calculate fDAC</button>
 
     <div class="result" id="resultVolume"></div>
     <div class="result" id="resultNetCPM"></div>
@@ -212,10 +244,9 @@
     <div id="resultComparison" class="result small-note"></div>
     <div id="resultReference" class="result small-note"></div>
 
-    <button onclick="clearForm()" style="background-color: #e74c3c; color: white;">Clear Data</button>
+    <button class="clear-button" onclick="clearForm()">Clear Data</button>
   </div>
 
-  <!-- LAPEL TAB -->
   <div id="lapelTab" class="tab-content">
     <h3>Lapel Sample Alpha Analysis</h3>
 
@@ -264,7 +295,7 @@
       <input type="number" id="lapelEfficiency" placeholder="e.g., 0.19" step="any" />
     </div>
 
-    <button onclick="calculateLapel()">Calculate Lapel</button>
+    <button class="primary-button" onclick="calculateLapel()">Calculate Lapel</button>
 
     <div class="status-box">
       <div id="lapelNetCPMResult" class="lapel-result"></div>
@@ -277,7 +308,7 @@
       Reference equation: 10 mrem CEDE = (222.22)(ALI)(F)(S)
     </div>
 
-    <button onclick="clearLapelForm()" style="background-color: #e74c3c; color: white;">Clear Lapel Data</button>
+    <button class="clear-button" onclick="clearLapelForm()">Clear Lapel Data</button>
   </div>
 
   <script>
@@ -371,6 +402,7 @@
 
       document.getElementById("flowUnit").selectedIndex = 0;
       document.getElementById("calculationMode").selectedIndex = 0;
+      document.getElementById("activityReportUnit").selectedIndex = 0;
       document.getElementById("alphaDivided").checked = false;
       document.getElementById("alphaCheckDiv").style.display = "none";
       document.getElementById("totalVolumeDisplay").textContent = "-- cc";
@@ -391,6 +423,7 @@
       const gross = parseFloat(document.getElementById("grossCPM").value);
       const background = parseFloat(document.getElementById("backgroundCPM").value);
       const efficiency = parseFloat(document.getElementById("efficiency").value);
+      const activityReportUnit = document.getElementById("activityReportUnit").value;
       const mdc = parseFloat(document.getElementById("mdc").value);
       const alphaDivided = document.getElementById("alphaDivided").checked;
 
@@ -405,6 +438,11 @@
         !/^\d{4}$/.test(timeOn) || !/^\d{4}$/.test(timeOff)
       ) {
         alert("Please fill in all required fields correctly.");
+        return;
+      }
+
+      if (efficiency <= 0) {
+        alert("Efficiency must be greater than zero.");
         return;
       }
 
@@ -426,7 +464,12 @@
       }
 
       const netCPM = gross - background;
-      resultNetCPM.textContent = `Net Activity: ${netCPM.toFixed(2)} CPM`;
+      const netDPM = netCPM / efficiency;
+      const reportedActivity = activityReportUnit === "dpm" ? netDPM : netCPM;
+
+      resultNetCPM.textContent = activityReportUnit === "dpm"
+        ? `Net Activity: ${netDPM.toFixed(2)} DPM`
+        : `Net Activity: ${netCPM.toFixed(2)} CPM`;
 
       if (mode === "alpha" && !alphaDivided) {
         const proceed = confirm("❗Reminder: Gross counts must be divided by 10 for alpha (10 min count).\nProceed anyway?");
@@ -435,8 +478,18 @@
 
       const DACValue = mode === "beta" ? 1e-8 : 3e-12;
       const filterFactor = mode === "alpha" ? 0.7 : 1;
-      const concentration_uCi = (netCPM / (DPM_PER_UCI * efficiency)) / volume;
-      const dacFraction = netCPM / (volume * filterFactor * DPM_PER_UCI * efficiency * DACValue);
+
+      let concentration_uCi;
+      let dacFraction;
+
+      if (activityReportUnit === "dpm") {
+        concentration_uCi = (netDPM / DPM_PER_UCI) / volume;
+        dacFraction = netDPM / (volume * filterFactor * DPM_PER_UCI * DACValue);
+      } else {
+        concentration_uCi = (netCPM / (DPM_PER_UCI * efficiency)) / volume;
+        dacFraction = netCPM / (volume * filterFactor * DPM_PER_UCI * efficiency * DACValue);
+      }
+
       const formattedDAC = dacFraction.toExponential(2);
 
       let fDACColor = "black";
