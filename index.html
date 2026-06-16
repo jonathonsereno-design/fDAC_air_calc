@@ -276,20 +276,27 @@
       <button class="copy-button" onclick="copyElementText('totalVolumeDisplay')">Copy Total Volume</button>
     </div>
 
-    <label for="grossCPM">Gross Activity (CPM)</label>
-    <input type="number" id="grossCPM" placeholder="e.g., 150" />
-
-    <label for="backgroundCPM">Background Activity (CPM)</label>
-    <input type="number" id="backgroundCPM" placeholder="e.g., 20" />
-
-    <label for="efficiency">Detector Efficiency (decimal)</label>
-    <input type="number" id="efficiency" step="0.01" placeholder="e.g., 0.19" />
-
-    <label for="activityReportUnit">Report Net Activity As</label>
-    <select id="activityReportUnit">
-      <option value="cpm">CPM</option>
-      <option value="dpm">DPM</option>
+    <label for="activityEntryMethod">Activity Entry Method</label>
+    <select id="activityEntryMethod">
+      <option value="grossCpm">Gross/Background CPM</option>
+      <option value="directDpm">Direct Net DPM</option>
     </select>
+
+    <div id="grossCpmSection">
+      <label for="grossCPM">Gross Activity (CPM)</label>
+      <input type="number" id="grossCPM" placeholder="e.g., 150" />
+
+      <label for="backgroundCPM">Background Activity (CPM)</label>
+      <input type="number" id="backgroundCPM" placeholder="e.g., 20" />
+
+      <label for="efficiency">Detector Efficiency (decimal)</label>
+      <input type="number" id="efficiency" step="any" placeholder="e.g., 0.19" />
+    </div>
+
+    <div id="directDpmSection" style="display: none;">
+      <label for="directNetDPM">Net Activity (DPM)</label>
+      <input type="number" id="directNetDPM" placeholder="Enter software-reported net activity in DPM" step="any" />
+    </div>
 
     <label for="mdc">Instrument MDC (μCi/mL)</label>
     <input type="number" id="mdc" placeholder="e.g., 5e-10" step="any" />
@@ -440,9 +447,20 @@
       }
     }
 
-    document.getElementById("calculationMode").addEventListener("change", function () {
-      document.getElementById("alphaCheckDiv").style.display = this.value === "alpha" ? "block" : "none";
-    });
+    function updateAirSampleUI() {
+      const mode = document.getElementById("calculationMode").value;
+      const entryMethod = document.getElementById("activityEntryMethod").value;
+      const isDirectDpm = entryMethod === "directDpm";
+
+      document.getElementById("grossCpmSection").style.display = isDirectDpm ? "none" : "block";
+      document.getElementById("directDpmSection").style.display = isDirectDpm ? "block" : "none";
+
+      document.getElementById("alphaCheckDiv").style.display =
+        mode === "alpha" && !isDirectDpm ? "block" : "none";
+    }
+
+    document.getElementById("calculationMode").addEventListener("change", updateAirSampleUI);
+    document.getElementById("activityEntryMethod").addEventListener("change", updateAirSampleUI);
 
     document.getElementById("lapelInstrumentType").addEventListener("change", function () {
       const isISolo = this.value === "isolo";
@@ -479,15 +497,17 @@
     }
 
     function clearForm() {
-      ["timeOn", "timeOff", "flowRate", "grossCPM", "backgroundCPM", "efficiency", "mdc"].forEach(id => {
+      [
+        "timeOn", "timeOff", "flowRate", "grossCPM", "backgroundCPM",
+        "efficiency", "directNetDPM", "mdc"
+      ].forEach(id => {
         document.getElementById(id).value = "";
       });
 
       document.getElementById("flowUnit").selectedIndex = 0;
       document.getElementById("calculationMode").selectedIndex = 0;
-      document.getElementById("activityReportUnit").selectedIndex = 0;
+      document.getElementById("activityEntryMethod").selectedIndex = 0;
       document.getElementById("alphaDivided").checked = false;
-      document.getElementById("alphaCheckDiv").style.display = "none";
       document.getElementById("totalVolumeDisplay").textContent = "-- cc";
 
       ["resultVolume", "resultNetCPM", "resultDAC", "resultComparison", "resultReference"].forEach(id => {
@@ -495,25 +515,68 @@
         el.textContent = "";
         el.style.color = "";
       });
+
+      updateAirSampleUI();
     }
 
     function calculateDAC() {
       const mode = document.getElementById("calculationMode").value;
-      const gross = parseFloat(document.getElementById("grossCPM").value);
-      const background = parseFloat(document.getElementById("backgroundCPM").value);
-      const efficiency = parseFloat(document.getElementById("efficiency").value);
-      const activityReportUnit = document.getElementById("activityReportUnit").value;
+      const entryMethod = document.getElementById("activityEntryMethod").value;
       const mdc = parseFloat(document.getElementById("mdc").value);
       const volume = calculateTotalVolume();
 
-      if (volume === null || isNaN(gross) || isNaN(background) || isNaN(efficiency)) {
-        alert("Please fill in all required fields correctly.");
+      if (volume === null) {
+        alert("Please enter valid Time On, Time Off, Flow Rate, and Flow Rate Unit.");
         return;
       }
 
-      if (efficiency <= 0) {
-        alert("Efficiency must be greater than zero.");
-        return;
+      const DACValue = mode === "beta" ? 1e-8 : 3e-12;
+      const filterFactor = mode === "alpha" ? 0.7 : 1;
+
+      let netDPM;
+      let concentration_uCi;
+      let dacFraction;
+
+      if (entryMethod === "directDpm") {
+        netDPM = parseFloat(document.getElementById("directNetDPM").value);
+
+        if (isNaN(netDPM)) {
+          alert("Please enter Net Activity in DPM.");
+          return;
+        }
+
+        document.getElementById("resultNetCPM").textContent = `Net Activity: ${netDPM.toFixed(2)} DPM`;
+
+        concentration_uCi = (netDPM / DPM_PER_UCI) / volume;
+        dacFraction = netDPM / (volume * filterFactor * DPM_PER_UCI * DACValue);
+      } else {
+        const gross = parseFloat(document.getElementById("grossCPM").value);
+        const background = parseFloat(document.getElementById("backgroundCPM").value);
+        const efficiency = parseFloat(document.getElementById("efficiency").value);
+
+        if (isNaN(gross) || isNaN(background) || isNaN(efficiency)) {
+          alert("Please fill in Gross Activity, Background Activity, and Detector Efficiency.");
+          return;
+        }
+
+        if (efficiency <= 0) {
+          alert("Efficiency must be greater than zero.");
+          return;
+        }
+
+        if (mode === "alpha" && !document.getElementById("alphaDivided").checked) {
+          const proceed = confirm("❗Reminder: Gross counts must be divided by 10 for alpha (10 min count).\nProceed anyway?");
+          if (!proceed) return;
+        }
+
+        const netCPM = gross - background;
+        netDPM = netCPM / efficiency;
+
+        document.getElementById("resultNetCPM").innerHTML =
+          `Net Activity: ${netCPM.toFixed(2)} CPM<br>Equivalent Activity: ${netDPM.toFixed(2)} DPM`;
+
+        concentration_uCi = (netCPM / (DPM_PER_UCI * efficiency)) / volume;
+        dacFraction = netCPM / (volume * filterFactor * DPM_PER_UCI * efficiency * DACValue);
       }
 
       document.getElementById("totalVolumeDisplay").textContent =
@@ -525,32 +588,6 @@
       const minVolume = mode === "beta" ? 1.5e5 : 3.0e6;
       if (volume < minVolume) {
         alert(`⚠️ WARNING: Volume (${volume.toExponential(2)} cc) is below procedural minimum for ${mode.toUpperCase()}.\nRefer to procedure for extended count time or re-sampling.`);
-      }
-
-      const netCPM = gross - background;
-      const netDPM = netCPM / efficiency;
-
-      document.getElementById("resultNetCPM").textContent = activityReportUnit === "dpm"
-        ? `Net Activity: ${netDPM.toFixed(2)} DPM`
-        : `Net Activity: ${netCPM.toFixed(2)} CPM`;
-
-      if (mode === "alpha" && !document.getElementById("alphaDivided").checked) {
-        const proceed = confirm("❗Reminder: Gross counts must be divided by 10 for alpha (10 min count).\nProceed anyway?");
-        if (!proceed) return;
-      }
-
-      const DACValue = mode === "beta" ? 1e-8 : 3e-12;
-      const filterFactor = mode === "alpha" ? 0.7 : 1;
-
-      let concentration_uCi;
-      let dacFraction;
-
-      if (activityReportUnit === "dpm") {
-        concentration_uCi = (netDPM / DPM_PER_UCI) / volume;
-        dacFraction = netDPM / (volume * filterFactor * DPM_PER_UCI * DACValue);
-      } else {
-        concentration_uCi = (netCPM / (DPM_PER_UCI * efficiency)) / volume;
-        dacFraction = netCPM / (volume * filterFactor * DPM_PER_UCI * efficiency * DACValue);
       }
 
       let color = "green";
@@ -569,14 +606,10 @@
       resultDAC.innerHTML = `${emoji} <strong>${mode === "alpha" ? "Alpha" : "Beta/Gamma"} fDAC:</strong> ${dacFraction.toExponential(2)}`;
 
       const resultComparison = document.getElementById("resultComparison");
-      if (!isNaN(mdc) && concentration_uCi < mdc) {
-        resultComparison.innerHTML =
-          `⚠️ Concentration (${concentration_uCi.toExponential(2)} μCi/mL) is < MDC (${mdc}). Results may be statistically invalid.`;
-        resultComparison.style.color = "orangered";
-      } else {
-        resultComparison.textContent = "";
-      }
-
+resultComparison.textContent = 
+  'Calculated Concentration: ${concentration_uCi.toExponential(2)} uCi/mL';
+      resultComparison.style.color = "";
+      
       document.getElementById("resultReference").innerHTML = mode === "alpha"
         ? "📌 NRC Alpha DAC (Am-241 Class Y): 3.0E-12 μCi/cc<br/>📎 Alpha calculations include a 0.7 self-absorption filter factor per procedure."
         : "📌 NRC Beta/Gamma DAC (Co-60 Class Y): 1.0E-8 μCi/cc";
@@ -707,6 +740,7 @@
     });
 
     loadDarkModePreference();
+    updateAirSampleUI();
   </script>
 </body>
 </html>
